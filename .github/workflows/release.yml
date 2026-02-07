@@ -45,9 +45,9 @@ jobs:
         run: pnpm test
 
       - name: Publish to npm
-        run: npm publish --provenance --access public
-        env:
-          NODE_AUTH_TOKEN: ${{ secrets.NPM_TOKEN }}
+        run: |
+          npm config delete '//registry.npmjs.org/:_authToken' 2>/dev/null || true
+          npm publish --provenance --access public
 
       - name: Create GitHub Release
         run: gh release create ${{ github.ref_name }} --generate-notes
