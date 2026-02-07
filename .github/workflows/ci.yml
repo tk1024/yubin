@@ -1,0 +1,84 @@
+name: CI
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+
+jobs:
+  lint:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: "22"
+
+      - uses: pnpm/action-setup@v4
+        with:
+          version: 10
+
+      - name: Install dependencies
+        run: pnpm install
+
+      - name: Lint
+        run: pnpm lint
+
+  typecheck:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: "22"
+
+      - uses: pnpm/action-setup@v4
+        with:
+          version: 10
+
+      - name: Install dependencies
+        run: pnpm install
+
+      - name: Build data
+        run: pnpm build:data
+
+      - name: Typecheck
+        run: pnpm typecheck
+
+  test:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: "22"
+
+      - uses: pnpm/action-setup@v4
+        with:
+          version: 10
+
+      - name: Install dependencies
+        run: pnpm install
+
+      - name: Download utf_ken_all.csv
+        run: |
+          curl -sL -o /tmp/ken_all.zip "https://www.post.japanpost.jp/zipcode/dl/utf/zip/utf_ken_all.zip"
+          unzip -o /tmp/ken_all.zip -d raw/
+
+      - name: Download JIGYOSYO.CSV
+        run: |
+          curl -sL -o /tmp/jigyosyo.zip "https://www.post.japanpost.jp/zipcode/dl/jigyosyo/zip/jigyosyo.zip"
+          unzip -o /tmp/jigyosyo.zip -d /tmp/jigyosyo_raw/
+          iconv -f CP932 -t UTF-8 /tmp/jigyosyo_raw/JIGYOSYO.CSV > raw/JIGYOSYO.CSV
+
+      - name: Build data
+        run: pnpm build:data
+
+      - name: Test
+        run: pnpm test
+
+      - name: Build
+        run: pnpm build
