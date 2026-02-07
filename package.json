@@ -32,7 +32,7 @@
   "scripts": {
     "build:data": "bun run scripts/build-data.ts",
     "build": "tsc -p tsconfig.cjs.json && tsc -p tsconfig.esm.json",
-    "postbuild": "echo '{\"type\":\"commonjs\"}' > dist/cjs/package.json && echo '{\"type\":\"module\"}' > dist/esm/package.json",
+    "postbuild": "echo '{\"type\":\"commonjs\"}' > dist/cjs/package.json && echo '{\"type\":\"module\"}' > dist/esm/package.json && echo 'export{chunks}from\"../../cjs/__generated__/chunks.js\";' > dist/esm/__generated__/chunks.js && rm -f dist/esm/__generated__/chunks.js.map",
     "prepublishOnly": "pnpm build:data && pnpm build",
     "test": "vitest run",
     "typecheck": "tsc --noEmit",
