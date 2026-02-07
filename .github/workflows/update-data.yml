@@ -44,7 +44,7 @@ jobs:
       - name: Check for changes
         id: changes
         run: |
-          if git diff --quiet data/; then
+          if git diff --quiet src/__generated__/; then
             echo "changed=false" >> "$GITHUB_OUTPUT"
           else
             echo "changed=true" >> "$GITHUB_OUTPUT"
@@ -52,6 +52,7 @@ jobs:
 
       - name: Create Pull Request
         if: steps.changes.outputs.changed == 'true'
+        id: create-pr
         uses: peter-evans/create-pull-request@v7
         with:
           commit-message: "chore: update postal code data"
@@ -63,3 +64,9 @@ jobs:
             - JIGYOSYO.CSV (事業所個別郵便番号)
           branch: chore/update-postal-data
           delete-branch: true
+
+      - name: Auto-merge Pull Request
+        if: steps.create-pr.outputs.pull-request-number
+        run: gh pr merge ${{ steps.create-pr.outputs.pull-request-number }} --squash --auto
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
