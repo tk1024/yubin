@@ -1,4 +1,4 @@
-import type { Address, JigyosyoAddress, KenAllAddress } from "./types.js";
+import type { Address, JigyosyoAddress, KenAllAddress } from "./types";
 
 /** base64 文字列を Uint8Array にデコード */
 export function base64ToBytes(base64: string): Uint8Array {

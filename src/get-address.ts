@@ -1,8 +1,8 @@
 import { inflateSync } from "fflate";
-import { chunks } from "./__generated__/chunks.js";
-import { normalizePostalCode } from "./normalize.js";
-import { base64ToBytes, parseChunk } from "./parse-chunk.js";
-import type { Address } from "./types.js";
+import { chunks } from "./__generated__/chunks";
+import { normalizePostalCode } from "./normalize";
+import { base64ToBytes, parseChunk } from "./parse-chunk";
+import type { Address } from "./types";
 
 const cache = new Map<string, Map<string, Address> | null>();
 
