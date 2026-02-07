@@ -1,7 +1,7 @@
-export { getAddress } from "./get-address";
-export { normalizePostalCode } from "./normalize";
+export { getAddress } from "./get-address.js";
+export { normalizePostalCode } from "./normalize.js";
 export type {
   Address,
   JigyosyoAddress,
   KenAllAddress,
-} from "./types";
+} from "./types.js";
