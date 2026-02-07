@@ -1,0 +1,6 @@
+node_modules/
+dist/
+data/
+raw/
+src/__generated__/
+*.tsbuildinfo

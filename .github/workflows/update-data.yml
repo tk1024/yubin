@@ -1,0 +1,65 @@
+name: Update postal code data
+
+on:
+  schedule:
+    # 毎日 9:00 JST (0:00 UTC) に実行
+    - cron: "0 0 * * *"
+  workflow_dispatch:
+
+permissions:
+  contents: write
+  pull-requests: write
+
+jobs:
+  update-data:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: "22"
+
+      - uses: pnpm/action-setup@v4
+        with:
+          version: 10
+
+      - name: Install dependencies
+        run: pnpm install
+
+      - name: Download utf_ken_all.csv
+        run: |
+          curl -sL -o /tmp/ken_all.zip "https://www.post.japanpost.jp/zipcode/dl/utf/zip/utf_ken_all.zip"
+          unzip -o /tmp/ken_all.zip -d raw/
+
+      - name: Download JIGYOSYO.CSV
+        run: |
+          curl -sL -o /tmp/jigyosyo.zip "https://www.post.japanpost.jp/zipcode/dl/jigyosyo/zip/jigyosyo.zip"
+          unzip -o /tmp/jigyosyo.zip -d /tmp/jigyosyo_raw/
+          iconv -f CP932 -t UTF-8 /tmp/jigyosyo_raw/JIGYOSYO.CSV > raw/JIGYOSYO.CSV
+
+      - name: Build data
+        run: pnpm build:data
+
+      - name: Check for changes
+        id: changes
+        run: |
+          if git diff --quiet data/; then
+            echo "changed=false" >> "$GITHUB_OUTPUT"
+          else
+            echo "changed=true" >> "$GITHUB_OUTPUT"
+          fi
+
+      - name: Create Pull Request
+        if: steps.changes.outputs.changed == 'true'
+        uses: peter-evans/create-pull-request@v7
+        with:
+          commit-message: "chore: update postal code data"
+          title: "chore: update postal code data"
+          body: |
+            日本郵便の最新データに更新します。
+
+            - utf_ken_all.csv (標準郵便番号)
+            - JIGYOSYO.CSV (事業所個別郵便番号)
+          branch: chore/update-postal-data
+          delete-branch: true
