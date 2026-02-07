@@ -1,0 +1,53 @@
+name: Release
+
+on:
+  push:
+    tags:
+      - "v*"
+
+permissions:
+  contents: write
+  id-token: write
+
+jobs:
+  release:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: "22"
+          registry-url: "https://registry.npmjs.org"
+
+      - uses: pnpm/action-setup@v4
+        with:
+          version: 10
+
+      - name: Install dependencies
+        run: pnpm install
+
+      - name: Download utf_ken_all.csv
+        run: |
+          curl -sL -o /tmp/ken_all.zip "https://www.post.japanpost.jp/zipcode/dl/utf/zip/utf_ken_all.zip"
+          unzip -o /tmp/ken_all.zip -d raw/
+
+      - name: Download JIGYOSYO.CSV
+        run: |
+          curl -sL -o /tmp/jigyosyo.zip "https://www.post.japanpost.jp/zipcode/dl/jigyosyo/zip/jigyosyo.zip"
+          unzip -o /tmp/jigyosyo.zip -d /tmp/jigyosyo_raw/
+          iconv -f CP932 -t UTF-8 /tmp/jigyosyo_raw/JIGYOSYO.CSV > raw/JIGYOSYO.CSV
+
+      - name: Build
+        run: pnpm build:data && pnpm build
+
+      - name: Test
+        run: pnpm test
+
+      - name: Publish to npm
+        run: npm publish --provenance --access public
+
+      - name: Create GitHub Release
+        run: gh release create ${{ github.ref_name }} --generate-notes
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
