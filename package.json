@@ -30,7 +30,7 @@
     "郵便番号"
   ],
   "scripts": {
-    "build:data": "bun run scripts/build-data.ts",
+    "build:data": "tsx scripts/build-data.ts",
     "build": "tsc -p tsconfig.cjs.json && tsc -p tsconfig.esm.json",
     "postbuild": "echo '{\"type\":\"commonjs\"}' > dist/cjs/package.json && echo '{\"type\":\"module\"}' > dist/esm/package.json && echo 'export{chunks}from\"../../cjs/__generated__/chunks.js\";' > dist/esm/__generated__/chunks.js && rm -f dist/esm/__generated__/chunks.js.map",
     "prepublishOnly": "pnpm build:data && pnpm build",
@@ -43,6 +43,7 @@
     "@biomejs/biome": "^2.3.10",
     "@types/node": "^25.2.1",
     "typescript": "^5.8.3",
+    "tsx": "^4.19.4",
     "vitest": "^2.1.8"
   },
   "dependencies": {
