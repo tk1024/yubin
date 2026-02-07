@@ -20,6 +20,10 @@
   "files": [
     "dist"
   ],
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/tk1024/yubin"
+  },
   "license": "MIT",
   "keywords": [
     "postal-code",
