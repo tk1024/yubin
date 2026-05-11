@@ -29,12 +29,12 @@ jobs:
 
       - name: Download utf_ken_all.csv
         run: |
-          curl -sL -o /tmp/ken_all.zip "https://www.post.japanpost.jp/zipcode/dl/utf/zip/utf_ken_all.zip"
+          curl -sL -o /tmp/ken_all.zip "https://www.post.japanpost.jp/service/search/zipcode/download/utf/zip/utf_ken_all.zip"
           unzip -o /tmp/ken_all.zip -d raw/
 
       - name: Download JIGYOSYO.CSV
         run: |
-          curl -sL -o /tmp/jigyosyo.zip "https://www.post.japanpost.jp/zipcode/dl/jigyosyo/zip/jigyosyo.zip"
+          curl -sL -o /tmp/jigyosyo.zip "https://www.post.japanpost.jp/service/search/zipcode/download/office/zip/jigyosyo.zip"
           unzip -o /tmp/jigyosyo.zip -d /tmp/jigyosyo_raw/
           iconv -f CP932 -t UTF-8 /tmp/jigyosyo_raw/JIGYOSYO.CSV > raw/JIGYOSYO.CSV
 
