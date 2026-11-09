@@ -1,17 +1,27 @@
-name: Release
+name: Release and update postal data
 
 on:
   push:
     tags:
       - "v*"
+  schedule:
+    # 毎日 9:23 JST。npm Trusted Publisher と同じファイルで公開する。
+    - cron: "23 0 * * *"
+  workflow_dispatch:
 
 permissions:
   contents: write
   id-token: write
 
+concurrency:
+  group: npm-release
+  cancel-in-progress: false
+
 jobs:
   release:
+    if: github.event_name == 'push' || github.ref == 'refs/heads/main'
     runs-on: ubuntu-latest
+    timeout-minutes: 20
     steps:
       - uses: actions/checkout@v4
 
@@ -28,31 +38,56 @@ jobs:
           version: 10
 
       - name: Install dependencies
-        run: pnpm install
+        run: pnpm install --frozen-lockfile
 
-      - name: Download utf_ken_all.csv
+      - name: Recover the last published GitHub Release
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        run: pnpm exec tsx scripts/github-release.ts
+
+      - name: Download and validate postal data
+        run: pnpm download:data
+
+      - name: Build data
+        run: pnpm build:data
+
+      - name: Compare with the published package and select version
+        id: plan
+        run: pnpm exec tsx scripts/prepare-release.ts
+
+      - name: Validate data and package
+        run: pnpm lint && pnpm typecheck && pnpm test && pnpm build
+
+      - name: Record data version and monthly activity
+        if: github.event_name != 'push'
         run: |
-          curl -sL -o /tmp/ken_all.zip "https://www.post.japanpost.jp/service/search/zipcode/download/utf/zip/utf_ken_all.zip"
-          unzip -o /tmp/ken_all.zip -d raw/
-
-      - name: Download JIGYOSYO.CSV
-        run: |
-          curl -sL -o /tmp/jigyosyo.zip "https://www.post.japanpost.jp/service/search/zipcode/download/office/zip/jigyosyo.zip"
-          unzip -o /tmp/jigyosyo.zip -d /tmp/jigyosyo_raw/
-          iconv -f CP932 -t UTF-8 /tmp/jigyosyo_raw/JIGYOSYO.CSV > raw/JIGYOSYO.CSV
-
-      - name: Build
-        run: pnpm build:data && pnpm build
-
-      - name: Test
-        run: pnpm test
+          # A monthly commit also prevents the 60-day schedule inactivity cutoff.
+          node -e 'require("node:fs").writeFileSync(".github/postal-data-check.json", JSON.stringify({ checkedMonth: new Date().toISOString().slice(0, 7) }, null, 2) + "\n")'
+          git config user.name 'github-actions[bot]'
+          git config user.email '41898282+github-actions[bot]@users.noreply.github.com'
+          git add package.json postal-data.json .github/postal-data-check.json
+          if ! git diff --cached --quiet; then
+            git commit -m 'chore: 郵便番号データと取得記録を更新'
+            # Never force-push over concurrent changes; retry on the next run.
+            git push origin HEAD:main
+          fi
 
       - name: Publish to npm
+        if: steps.plan.outputs.publish == 'true'
         run: |
           npm config delete '//registry.npmjs.org/:_authToken' 2>/dev/null || true
           npm publish --provenance --access public
 
       - name: Create GitHub Release
-        run: gh release create ${{ github.ref_name }} --generate-notes
         env:
           GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          VERSION: ${{ steps.plan.outputs.version }}
+        run: pnpm exec tsx scripts/github-release.ts
+
+      - name: Summarize update
+        env:
+          VERSION: ${{ steps.plan.outputs.version }}
+          PUBLISHED: ${{ steps.plan.outputs.publish }}
+        run: |
+          echo "npm version: $VERSION; published this run: $PUBLISHED" >> "$GITHUB_STEP_SUMMARY"
+          cat postal-data.json >> "$GITHUB_STEP_SUMMARY"

@@ -120,6 +120,43 @@ type Address = KenAllAddress | JigyosyoAddress;
 データはビルド時に deflate 圧縮してパッケージに同梱されます。
 データの更新はパッケージのバージョンアップで反映されます。
 
+### データの取得と検証
+
+```bash
+pnpm install --frozen-lockfile
+pnpm download:data
+pnpm build:data
+pnpm typecheck && pnpm test && pnpm build
+```
+
+`download:data` は両CSVのHTTP応答、ZIP、文字コード、列数、最低件数を検証します。
+`build:data` は、元CSVのSHA-256と収録件数を `postal-data.json` に記録します。
+このファイルはnpmパッケージにも同梱されるため、収録データを確認できます。
+
+日次更新は `.github/workflows/release.yml` に集約しています。毎日9:23 JSTに以下を実行します。
+
+1. 日本郵便から両CSVを取得し、データを検証します。
+2. npmの最新公開版に同梱された `postal-data.json` と比較します。旧版にこのファイルがない場合は、初回更新として扱います。
+3. データに変更があればパッチ版を選び、lint・型チェック・テスト・ビルドを実行します。
+4. 検証後にバージョンと取得記録をmainへコミットし、npmに公開してGitHub Releaseを作成します。
+
+同じデータでは再公開しません。npm公開が失敗しても、次回は実際の公開版と比較するため再試行できます。
+GitHub Releaseの作成だけが失敗したときは、次版を公開する前に作成を再試行します。
+タグの対象にはnpmが記録した公開元コミットを使用するため、その後mainが進んでも公開元を保持できます。
+取得やnpmの照会に失敗した場合は、その実行を失敗にして公開を止めます。
+取得から公開まで同じCSVを使用します。
+
+GitHubの非活動による定期実行停止を防ぐため、変更のない月も取得記録をmainへ月1回コミットします。
+このため、Actionsの `contents: write` とmainへの書き込み許可が必要です。
+ブランチ保護で書き込みを制限する場合は、運用に合わせて更新方法を変更してください。
+
+npmのTrusted Publisherは、既存の `release.yml` を使用します。
+Actionsの `Release and update postal data` から手動実行することもできます。
+`v*` タグによる手動リリースも引き続き使えます。タグ名と `package.json` のバージョンを一致させてください。
+mainの `package.json` を公開済みの版より大きいバージョンに更新したときも、次回の定期実行で公開します。
+データ変更だけを公開する運用では、npmの `latest` を最新の正式版に保ってください。
+実行の成否に加えて、サマリーの公開バージョンと取得データのハッシュを確認できます。
+
 ## License
 
 MIT

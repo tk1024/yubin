@@ -5,6 +5,7 @@
  * 郵便番号の上位3桁ごとに CSV を作成、deflate 圧縮し、
  * base64 エンコードして src/__generated__/chunks.ts に出力する。
  */
+import { createHash } from "node:crypto";
 import { existsSync, mkdirSync, readFileSync, writeFileSync } from "node:fs";
 import { join } from "node:path";
 import { deflateSync } from "fflate";
@@ -201,6 +202,18 @@ function main() {
   // src/__generated__/chunks.ts を生成
   const tsContent = `// Generated file - do not edit\nexport const chunks: Record<string, string> = {${entries.join(",")}};\n`;
   writeFileSync(join(GENERATED_DIR, "chunks.ts"), tsContent);
+
+  // Stable metadata can be compared even though generated chunks are ignored.
+  const sources = ["utf_ken_all.csv", "JIGYOSYO.CSV"].map((file) => ({
+    file,
+    sha256: createHash("sha256")
+      .update(readFileSync(join(RAW_DIR, file)))
+      .digest("hex"),
+  }));
+  writeFileSync(
+    join(ROOT, "postal-data.json"),
+    `${JSON.stringify({ sources, entries: merged.size }, null, 2)}\n`,
+  );
 
   console.log(`CSV total: ${(totalCsvBytes / 1024 / 1024).toFixed(2)} MB`);
   console.log(

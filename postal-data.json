@@ -1,0 +1,13 @@
+{
+  "sources": [
+    {
+      "file": "utf_ken_all.csv",
+      "sha256": "33a3a1e14a69778282cfb22c17ba0b5f888669d091ada93e1ba960f259f6b2d5"
+    },
+    {
+      "file": "JIGYOSYO.CSV",
+      "sha256": "1bb8a39625d7998569cf37ab03a37c5a5b91b23ff6b233aae975dc56a5f99798"
+    }
+  ],
+  "entries": 142917
+}

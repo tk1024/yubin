@@ -13,7 +13,8 @@
     }
   },
   "files": [
-    "dist"
+    "dist",
+    "postal-data.json"
   ],
   "repository": {
     "type": "git",
@@ -29,6 +30,7 @@
     "郵便番号"
   ],
   "scripts": {
+    "download:data": "tsx scripts/download-data.ts",
     "build:data": "tsx scripts/build-data.ts",
     "build": "unbuild",
     "prepublishOnly": "pnpm build:data && pnpm build",
