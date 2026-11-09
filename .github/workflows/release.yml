@@ -40,6 +40,11 @@ jobs:
       - name: Install dependencies
         run: pnpm install --frozen-lockfile
 
+      - name: Recover the last published GitHub Release
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        run: pnpm exec tsx scripts/github-release.ts
+
       - name: Download and validate postal data
         run: pnpm download:data
 
@@ -77,10 +82,7 @@ jobs:
         env:
           GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
           VERSION: ${{ steps.plan.outputs.version }}
-        run: |
-          if ! gh release view "v$VERSION" >/dev/null 2>&1; then
-            gh release create "v$VERSION" --target "$(git rev-parse HEAD)" --generate-notes
-          fi
+        run: pnpm exec tsx scripts/github-release.ts
 
       - name: Summarize update
         env:
