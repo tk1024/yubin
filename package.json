@@ -1,6 +1,6 @@
 {
   "name": "yubin",
-  "version": "0.2.2",
+  "version": "0.2.3",
   "description": "Japanese postal code to address lookup. Offline, sync API.",
   "main": "dist/index.cjs",
   "module": "dist/index.mjs",
