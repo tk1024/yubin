@@ -8,6 +8,7 @@ import {
 } from "node:fs";
 import { tmpdir } from "node:os";
 import { join } from "node:path";
+import { readNpmPack, readNpmVersion } from "./npm-json";
 import { parseManifest, planRelease, planTaggedRelease } from "./release-plan";
 
 const root = join(__dirname, "..");
@@ -16,7 +17,7 @@ const pkg = JSON.parse(readFileSync(pkgPath, "utf8"));
 const current = parseManifest(
   JSON.parse(readFileSync(join(root, "postal-data.json"), "utf8")),
 );
-const publishedVersion: string = JSON.parse(
+const publishedVersion = readNpmVersion(
   execFileSync("npm", ["view", "yubin@latest", "version", "--json"], {
     encoding: "utf8",
   }),
@@ -27,7 +28,7 @@ const publishedVersion: string = JSON.parse(
 const temp = mkdtempSync(join(tmpdir(), "yubin-published-"));
 let published = null;
 try {
-  const [packed] = JSON.parse(
+  const packed = readNpmPack(
     execFileSync(
       "npm",
       [
