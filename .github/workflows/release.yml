@@ -21,7 +21,7 @@ jobs:
   release:
     if: github.event_name == 'push' || github.ref == 'refs/heads/main'
     runs-on: ubuntu-latest
-    timeout-minutes: 20
+    timeout-minutes: 45
     steps:
       - uses: actions/checkout@v4
 
@@ -73,21 +73,43 @@ jobs:
           fi
 
       - name: Publish to npm
+        id: publish
         if: steps.plan.outputs.publish == 'true'
         run: |
           npm config delete '//registry.npmjs.org/:_authToken' 2>/dev/null || true
           npm publish --provenance --access public
 
+      - name: Wait for the accepted npm version to become available
+        id: availability
+        if: steps.publish.outcome == 'success' && steps.plan.outputs.publish == 'true'
+        env:
+          VERSION: ${{ steps.plan.outputs.version }}
+        run: pnpm exec tsx scripts/wait-for-publication.ts
+
       - name: Create GitHub Release
+        id: release
         env:
           GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
           VERSION: ${{ steps.plan.outputs.version }}
         run: pnpm exec tsx scripts/github-release.ts
 
       - name: Summarize update
+        if: always()
         env:
           VERSION: ${{ steps.plan.outputs.version }}
-          PUBLISHED: ${{ steps.plan.outputs.publish }}
+          PUBLISH_OUTCOME: ${{ steps.publish.outcome }}
+          AVAILABILITY_OUTCOME: ${{ steps.availability.outcome }}
+          RELEASE_OUTCOME: ${{ steps.release.outcome }}
         run: |
-          echo "npm version: $VERSION; published this run: $PUBLISHED" >> "$GITHUB_STEP_SUMMARY"
-          cat postal-data.json >> "$GITHUB_STEP_SUMMARY"
+          {
+            echo "npm version: $VERSION"
+            echo "Publish request: $PUBLISH_OUTCOME"
+            echo "Availability check: $AVAILABILITY_OUTCOME"
+            echo "GitHub Release: $RELEASE_OUTCOME"
+            if [ "$PUBLISH_OUTCOME" = 'success' ] && [ "$AVAILABILITY_OUTCOME" != 'success' ]; then
+              echo 'Upload accepted; availability unconfirmed. Do not republish while npm is processing. Check availability before rerunning.'
+            fi
+            if [ -f postal-data.json ]; then
+              cat postal-data.json
+            fi
+          } >> "$GITHUB_STEP_SUMMARY"
