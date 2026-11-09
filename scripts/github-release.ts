@@ -6,14 +6,8 @@ const requestedVersion = process.env.VERSION ?? "latest";
 const published: { version: string; gitHead?: string } = JSON.parse(
   execFileSync(
     "npm",
-    [
-      "view",
-      `yubin@${requestedVersion}`,
-      "version",
-      "gitHead",
-      "--json",
-      "--prefer-online",
-    ],
+    // Selecting fields can return a scalar when a legacy field is missing.
+    ["view", `yubin@${requestedVersion}`, "--json", "--prefer-online"],
     { encoding: "utf8" },
   ),
 );
