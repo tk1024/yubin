@@ -20,7 +20,14 @@ beforeEach(() => {
 afterEach(() => vi.unstubAllEnvs());
 
 describe("GitHub Release recovery", () => {
-  it("targets the published commit even when today's checkout has advanced", async () => {
+  it.each([
+    false,
+    true,
+  ])("targets the published commit with npm 12 array wrapping=%s", async (wrapped) => {
+    const metadata = { version: "0.2.3", gitHead: publishedCommit };
+    execFileSync.mockReturnValue(
+      JSON.stringify(wrapped ? [metadata] : metadata),
+    );
     await import("../github-release");
     expect(execFileSync).toHaveBeenLastCalledWith(
       "gh",

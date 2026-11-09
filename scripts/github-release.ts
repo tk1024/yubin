@@ -1,9 +1,10 @@
 import { execFileSync, spawnSync } from "node:child_process";
+import { readNpmPackage } from "./npm-json";
 
 // npm records the publishing commit as gitHead. Using today's HEAD would tag
 // unrelated code if release creation is retried after main has advanced.
 const requestedVersion = process.env.VERSION ?? "latest";
-const published: { version: string; gitHead?: string } = JSON.parse(
+const published = readNpmPackage(
   execFileSync(
     "npm",
     // Selecting fields can return a scalar when a legacy field is missing.
@@ -11,9 +12,6 @@ const published: { version: string; gitHead?: string } = JSON.parse(
     { encoding: "utf8" },
   ),
 );
-if (!/^\d+\.\d+\.\d+$/.test(published.version)) {
-  throw new Error("Invalid published version");
-}
 const tag = `v${published.version}`;
 const existing = spawnSync("gh", ["release", "view", tag], {
   encoding: "utf8",
